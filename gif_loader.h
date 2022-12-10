@@ -6,17 +6,32 @@
 
 #include "core/io/image.h"
 
+struct GIF_WHDR;
+
 class GIFLoader : public Reference {
-    GDCLASS(GIFLoader, Reference);
+	GDCLASS(GIFLoader, Reference);
 
 public:
-	Array load_gif(const String &file);
+	Array get_images();
+
+	void load_gif(const String &file);
 
 	GIFLoader();
 	~GIFLoader();
 
 private:
 	static void _bind_methods();
+
+	static void gif_frame(void *data, struct GIF_WHDR *whdr);
+
+	Array _images;
+
+	Vector<uint8_t> data;
+	PoolByteArray pictd;
+    PoolByteArray prevd;
+
+	unsigned long size;
+	unsigned long last;
 };
 
-#endif 
+#endif
