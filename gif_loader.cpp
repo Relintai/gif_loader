@@ -76,7 +76,8 @@ void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
 	pictw.release();
 
 	Array image_arr;
-	image_arr.push_back(whdr->time);
+	int aframe_time = whdr->time;
+	image_arr.push_back(aframe_time);
 
 	Ref<Image> img;
 	img.instance();
