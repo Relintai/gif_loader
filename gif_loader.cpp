@@ -45,10 +45,15 @@ void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
 
 	pictw.release();
 
+	Array image_arr;
+	image_arr.push_back(whdr->time);
+
 	Ref<Image> img;
 	img.instance();
 	img->create(whdr->xdim, whdr->ydim, false, Image::FORMAT_RGBA8, loader->pictd);
-	loader->_images.push_back(img);
+	image_arr.push_back(img);
+
+	loader->_images.push_back(image_arr);
 
 	pict = (uint32_t *)pictw.ptr();
 
