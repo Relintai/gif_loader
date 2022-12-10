@@ -7,9 +7,39 @@
 
 #include "./thirdparty/gif_load/gif_load.h"
 #include "core/os/file_access.h"
+#include "scene/resources/texture.h"
 
 Array GIFLoader::get_images() {
 	return _images;
+}
+
+Ref<AnimatedTexture> GIFLoader::create_texture(float fps) {
+	Ref<AnimatedTexture> tex;
+	tex.instance();
+	tex->set_fps(0);
+	tex->set_flags(0);
+	
+	float per_frame_time = 1.0 / fps;
+
+	for (int i = 0; i < _images.size(); ++i) {
+		Array arr = _images[i];
+
+		ERR_CONTINUE(arr.size() != 2);
+
+		float frames = arr[0];
+		Ref<Image> img = arr[1];
+
+		Ref<ImageTexture> imgt;
+		imgt.instance();
+		imgt->create_from_image(img, 0);
+
+		tex->set_frame_texture(i, imgt);
+		tex->set_frame_delay(i, per_frame_time * frames);
+	}
+
+	tex->set_frames(_images.size());
+
+	return tex;
 }
 
 void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
@@ -112,6 +142,7 @@ GIFLoader::~GIFLoader() {
 }
 
 void GIFLoader::_bind_methods() {
-	ClassDB::bind_method(D_METHOD("load_gif", "file"), &GIFLoader::load_gif);
 	ClassDB::bind_method(D_METHOD("get_images"), &GIFLoader::get_images);
+	ClassDB::bind_method(D_METHOD("create_texture", "fps"), &GIFLoader::create_texture, 60);
+	ClassDB::bind_method(D_METHOD("load_gif", "file"), &GIFLoader::load_gif);
 }

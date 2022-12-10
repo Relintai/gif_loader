@@ -7,12 +7,14 @@
 #include "core/io/image.h"
 
 struct GIF_WHDR;
+class AnimatedTexture;
 
 class GIFLoader : public Reference {
 	GDCLASS(GIFLoader, Reference);
 
 public:
 	Array get_images();
+    Ref<AnimatedTexture> create_texture(float fps = 60);
 
 	void load_gif(const String &file);
 
