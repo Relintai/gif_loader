@@ -1,6 +1,10 @@
 
 #include "gif_loader.h"
 
+#ifdef BIG_ENDIAN_ENABLED
+#define GIF_BIGE 1
+#endif
+
 #include "./thirdparty/gif_load/gif_load.h"
 #include "core/os/file_access.h"
 
@@ -13,32 +17,10 @@ void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
 	//uint8_t head[18] = { 0 };
 	GIFLoader *loader = (GIFLoader *)data;
 
-#define BGRA(i) ((whdr->bptr[i] == whdr->tran) ? 0 : ((uint32_t)(whdr->cpal[whdr->bptr[i]].R << ((GIF_BIGE) ? 8 : 16)) | (uint32_t)(whdr->cpal[whdr->bptr[i]].G << ((GIF_BIGE) ? 16 : 8)) | (uint32_t)(whdr->cpal[whdr->bptr[i]].B << ((GIF_BIGE) ? 24 : 0)) | ((GIF_BIGE) ? 0xFF : 0xFF000000)))
-
-	/*
-	if (!whdr->ifrm) {
-		// TGA doesn`t support heights over 0xFFFF, so we have to trim:
-		whdr->nfrm = ((whdr->nfrm < 0) ? -whdr->nfrm : whdr->nfrm) * whdr->ydim;
-		whdr->nfrm = (whdr->nfrm < 0xFFFF) ? whdr->nfrm : 0xFFFF;
-		// this is the very first frame, so we must write the header
-		head[2] = 2;
-		head[12] = (uint8_t)(whdr->xdim);
-		head[13] = (uint8_t)(whdr->xdim >> 8);
-		head[14] = (uint8_t)(whdr->nfrm);
-		head[15] = (uint8_t)(whdr->nfrm >> 8);
-		head[16] = 32; // 32 bits depth
-		head[17] = 0x20; // top-down flag
-		write(stat->uuid, head, 18UL);
-		ddst = (uint32_t)(whdr->xdim * whdr->ydim);
-		stat->pict = calloc(sizeof(uint32_t), ddst);
-		stat->prev = calloc(sizeof(uint32_t), ddst);
-	}
-	*/
-
-	//ddst = (uint32_t)(whdr->xdim * whdr->ydim);
+#define RGBA(i) ((whdr->bptr[i] == whdr->tran) ? 0 : ((uint32_t)(whdr->cpal[whdr->bptr[i]].R << ((GIF_BIGE) ? 24 : 0)) | (uint32_t)(whdr->cpal[whdr->bptr[i]].G << ((GIF_BIGE) ? 16 : 8)) | (uint32_t)(whdr->cpal[whdr->bptr[i]].B << ((GIF_BIGE) ? 8 : 16)) | ((GIF_BIGE) ? 0xFF : 0xFF000000)))
 
 	if (!whdr->ifrm) {
-		//forst frame, alloc
+		//first frame, alloc
 		ddst = (uint32_t)(whdr->xdim * whdr->ydim);
 		loader->pictd.resize(ddst * sizeof(uint32_t));
 		loader->prevd.resize(ddst * sizeof(uint32_t));
@@ -55,7 +37,7 @@ void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
 		for (yoff = 16U >> ((iter > 1) ? iter : 1), y = (8 >> iter) & 7; y < (uint32_t)whdr->fryd; y += yoff) {
 			for (x = 0; x < (uint32_t)whdr->frxd; x++) {
 				if (whdr->tran != (long)whdr->bptr[++dsrc]) {
-					pict[(uint32_t)whdr->xdim * y + x + ddst] = BGRA(dsrc);
+					pict[(uint32_t)whdr->xdim * y + x + ddst] = RGBA(dsrc);
 				}
 			}
 		}
@@ -90,12 +72,12 @@ void GIFLoader::gif_frame(void *data, struct GIF_WHDR *whdr) {
 	if (whdr->mode == GIF_BKGD) { /** cutting a hole for the next frame **/
 		for (whdr->bptr[0] = (uint8_t)((whdr->tran >= 0) ? whdr->tran : whdr->bkgd), y = 0, pict = (uint32_t *)pictw.ptr(); y < (uint32_t)whdr->fryd; y++) {
 			for (x = 0; x < (uint32_t)whdr->frxd; x++) {
-				pict[(uint32_t)whdr->xdim * y + x + ddst] = BGRA(0);
+				pict[(uint32_t)whdr->xdim * y + x + ddst] = RGBA(0);
 			}
 		}
 	}
 
-#undef BGRA
+#undef RGBA
 }
 
 void GIFLoader::load_gif(const String &file) {
